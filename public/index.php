@@ -6,5 +6,5 @@ if (isset($_POST)){
   $gny->process($_POST);
 }
 
-
-var_dump(get_include_path()); exit;
+print $gny->response();
+exit;

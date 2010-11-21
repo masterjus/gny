@@ -11,11 +11,10 @@ set_include_path(get_include_path(). PATH_SEPARATOR. APP_PATH. PATH_SEPARATOR. L
 
 global $db;
 global $config;
-global $json;
 
 $config= parse_ini_file(CONFIG_PATH. DS. 'config.ini', true);
 
-echo $connectionStr = 'mysqli://'. $config['server']['user']. ':'. $config['server']['password']. '@'. $config['server']['host']. '/'. $config['server']['db'];
+$connectionStr = 'mysqli://'. $config['server']['user']. ':'. $config['server']['password']. '@'. $config['server']['host']. '/'. $config['server']['db'];
 
 require_once 'MDB2.php';
 $options = array(
@@ -26,5 +25,3 @@ $db = MDB2::connect($connectionStr,$options);
 
 require_once 'classes/GNY.php';
 $gny = new GNY();
-
-var_dump($config, $db); exit;

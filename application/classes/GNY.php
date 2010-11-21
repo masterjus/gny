@@ -1,38 +1,61 @@
 <?php
-require_once 'JSON.php';
 
-final class GNY extends Services_JSON
+
+final class GNY extends GNY_Abstract
 {
   private $_action;
   private $_request;
   private $_response;
-  private $_json;
   private $_user;
-  private $_db;
   
   public function __construct()
   {
     
-    $this->_db =& MDB2::singleton();
   }
   
   public function process(array $post)
   {
     $this->_request = $post;
+    $this->_parseRequest();
   }
   
   public function response()
   {
-    if (GNY_Error::hasErrors())
-      $this->_response = GNY_Error::getErrors();
+    
+    
+    
+    
+    
+    if (empty($this->_response)) {
+      GNY_Error::addError('Empty response');
+    }
+    
+    if (GNY_Error::hasErrors()) {
+      $this->_response = $this->_makeJson('error',null,GNY_Error::getErrors());
+    }
     return $this->_response;
   }
   
-  public function parseRequest()
+  private function _makeJson($action, $userId, $message) {
+    $message = serialize($message);
+    $response = array(
+      'action' => $action,
+      'userId' => $userId,
+      'message' => $message,
+    );
+    
+    return $this->encode($response);
+  }
+  
+  private function _parseRequest()
   {
     if ( !isset($this->_request['action']) ) {
       GNY_Error::addError('Action wasn\'t found');
+      return;
     }
+    $this->_action = $this->_request['action'];
+    $this->_user = new GNY_User($this->_request['userId']);
+    
   }
   
   private function _generateKey()
