@@ -6,5 +6,5 @@ if (isset($_POST)){
   $gny->process($_POST);
 }
 
-print $gny->response();
+echo  $gny->response();
 exit;

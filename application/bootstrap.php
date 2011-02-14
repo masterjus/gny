@@ -25,3 +25,4 @@ $db = MDB2::connect($connectionStr,$options);
 
 require_once 'classes/GNY.php';
 $gny = new GNY();
+$gny->debug = true;

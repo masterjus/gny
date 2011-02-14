@@ -1,5 +1,5 @@
 <?php
-
+require_once 'GNY_Abstract.php';
 
 final class GNY extends GNY_Abstract
 {
@@ -7,14 +7,17 @@ final class GNY extends GNY_Abstract
   private $_request;
   private $_response;
   private $_user;
+  protected $_json;
+  public $debug = false;
   
   public function __construct()
   {
-    
+    $this->_json = new Services_JSON();
   }
   
   public function process(array $post)
   {
+    parent::__construct();
     $this->_request = $post;
     $this->_parseRequest();
   }
@@ -44,7 +47,10 @@ final class GNY extends GNY_Abstract
       'message' => $message,
     );
     
-    return $this->encode($response);
+    if ($this->debug)
+      return $this->_json->encodeUnsafe($response);
+    else 
+      return $this->_json->encode($response);
   }
   
   private function _parseRequest()
@@ -58,20 +64,7 @@ final class GNY extends GNY_Abstract
     
   }
   
-  private function _generateKey()
-  {
-    global $config;
-    $keyLine = $config['secret']['key']. time();
-    if (null !== $this->_user){
-      $keyLine .= $this->_user->id;
-    }
-    $key = sha1($keyLine);
-    //TODO Сохранить ключ в базу
-    /*$query = $this->_db->escape('INSERT INTO _');
-    $this->_db->query();
-    */
-    return $key;
-  }
+  
   
   private function _validateKey()
   {
