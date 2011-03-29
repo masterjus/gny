@@ -12,6 +12,7 @@ final class GNY extends GNY_Abstract
   
   public function __construct()
   {
+    parent::__construct();
     $this->_json = new Services_JSON();
   }
   

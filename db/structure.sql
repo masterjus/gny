@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `maps` (
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `Id` int(11) NOT NULL,
+  `id` int(11) NOT NULL,
   `name` varchar(250) NOT NULL,
   `rating` int(11) NOT NULL,
   `registration_date` datetime NOT NULL,
