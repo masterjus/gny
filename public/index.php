@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../application/bootstrap.php';
 
 if (isset($_POST)){
@@ -7,4 +8,5 @@ if (isset($_POST)){
 }
 
 echo  $gny->response();
+$db->disconnect();
 exit;

@@ -14,15 +14,16 @@ global $config;
 
 $config= parse_ini_file(CONFIG_PATH. DS. 'config.ini', true);
 
-$connectionStr = 'mysqli://'. $config['server']['user']. ':'. $config['server']['password']. '@'. $config['server']['host']. '/'. $config['server']['db'];
+$connectionStr = $config['server']['driver']. '://'. $config['server']['user']. ':'. $config['server']['password']. '@'. $config['server']['host']. '/'. $config['server']['db'];
 
 require_once 'MDB2.php';
 $options = array(
     'debug' => 2,
     'result_buffering' => false,
 );
-$db = MDB2::connect($connectionStr,$options);
+$db =& MDB2::connect($connectionStr,$options);
 
 require_once 'classes/GNY.php';
 $gny = new GNY();
 $gny->debug = true;
+

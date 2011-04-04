@@ -2,8 +2,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2008 Manuel Lemos, Tomas V.V.Cox,                 |
-// | Stig. S. Bakken, Lukas Smith                                         |
+// | Copyright (c) 2006-2007 Lorenzo Alberton                             |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
 // | MDB2 is a merge of PEAR DB and Metabases that provides a unified DB  |
@@ -39,106 +38,38 @@
 // | WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE          |
 // | POSSIBILITY OF SUCH DAMAGE.                                          |
 // +----------------------------------------------------------------------+
-// | Author: Lukas Smith <smith@pooteeweet.org>                           |
+// | Author: Lorenzo Alberton <l.alberton@quipo.it>                       |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
-//
+// $Id: MDB2_nonstandard_mysql.php 231176 2007-03-04 22:51:06Z quipo $
 
-require_once 'MDB2/Driver/Function/Common.php';
+class MDB2_nonstandard_mysql extends MDB2_nonstandard {
 
-/**
- * MDB2 MySQLi driver for the function modules
- *
- * @package MDB2
- * @category Database
- * @author  Lukas Smith <smith@pooteeweet.org>
- */
-class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
-{
-     // }}}
-    // {{{ executeStoredProc()
+    var $trigger_body = '';
 
-    /**
-     * Execute a stored procedure and return any results
-     *
-     * @param string $name string that identifies the function to execute
-     * @param mixed  $params  array that contains the paramaters to pass the stored proc
-     * @param mixed   $types  array that contains the types of the columns in
-     *                        the result set
-     * @param mixed $result_class string which specifies which result class to use
-     * @param mixed $result_wrap_class string which specifies which class to wrap results in
-     * @return mixed a result handle or MDB2_OK on success, a MDB2 error on failure
-     * @access public
-     */
-    function executeStoredProc($name, $params = null, $types = null, $result_class = true, $result_wrap_class = false)
-    {
-        $db = $this->getDBInstance();
-        if (PEAR::isError($db)) {
-            return $db;
-        }
-
-        $multi_query = $db->getOption('multi_query');
-        if (!$multi_query) {
-            $db->setOption('multi_query', true);
-        }
-        $query = 'CALL '.$name;
-        $query .= $params ? '('.implode(', ', $params).')' : '()';
-        $result = $db->query($query, $types, $result_class, $result_wrap_class);
-        if (!$multi_query) {
-            $db->setOption('multi_query', false);
-        }
-        return $result;
+    function createTrigger($trigger_name, $table_name) {
+        $this->trigger_body = 'BEGIN
+  UPDATE '. $table_name .' SET somedescription = OLD.somename WHERE id = NEW.id;
+END';
+        $query = 'CREATE TRIGGER '. $trigger_name .' AFTER UPDATE ON '. $table_name .'
+                  FOR EACH ROW '. $this->trigger_body .';';
+        return $this->db->exec($query);
     }
 
-    // }}}
-    // {{{ unixtimestamp()
-
-    /**
-     * return string to call a function to get the unix timestamp from a iso timestamp
-     *
-     * @param string $expression
-     *
-     * @return string to call a variable with the timestamp
-     * @access public
-     */
-    function unixtimestamp($expression)
-    {
-        return 'UNIX_TIMESTAMP('. $expression.')';
+    function checkTrigger($trigger_name, $table_name, $def) {
+        parent::checkTrigger($trigger_name, $table_name, $def);
+        $this->test->assertEquals($this->trigger_body, $def['trigger_body']);
     }
 
-    // }}}
-    // {{{ concat()
-
-    /**
-     * Returns string to concatenate two or more string parameters
-     *
-     * @param string $value1
-     * @param string $value2
-     * @param string $values...
-     * @return string to concatenate two strings
-     * @access public
-     **/
-    function concat($value1, $value2)
-    {
-        $args = func_get_args();
-        return "CONCAT(".implode(', ', $args).")";
+    function dropTrigger($trigger_name, $table_name) {
+        return $this->db->exec('DROP TRIGGER '.$trigger_name);
     }
 
-    // }}}
-    // {{{ guid()
-
-    /**
-     * Returns global unique identifier
-     *
-     * @return string to get global unique identifier
-     * @access public
-     */
-    function guid()
-    {
-        return 'UUID()';
+    function createFunction($name) {
+        $query = 'CREATE FUNCTION '.$name.'(a INT, b INT) RETURNS INT
+RETURN a + b;';
+        return $this->db->exec($query);
     }
-
-    // }}}
 }
+
 ?>

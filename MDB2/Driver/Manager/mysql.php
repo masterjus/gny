@@ -42,19 +42,19 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 302865 2010-08-29 10:30:55Z quipo $
+// $Id: mysql.php 302865 2010-08-29 10:30:55Z quipo $
 //
 
 require_once 'MDB2/Driver/Manager/Common.php';
 
 /**
- * MDB2 MySQLi driver for the management modules
+ * MDB2 MySQL driver for the management modules
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
+class MDB2_Driver_Manager_mysql extends MDB2_Driver_Manager_Common
 {
 
     // }}}
@@ -368,7 +368,7 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
         } else {
             $table = $db->quoteIdentifier($table, true);
         }
-
+        
         $result = $db->exec('OPTIMIZE TABLE '.$table);
         if (PEAR::isError($result)) {
             return $result;
@@ -782,33 +782,33 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
      * Get the stucture of a field into an array
      *
      * @author Leoncx
-     * @param string    $table         name of the table on which the index is to be created
-     * @param string    $name         name of the index to be created
-     * @param array     $definition        associative array that defines properties of the index to be created.
-     *                                 Currently, only one property named FIELDS is supported. This property
-     *                                 is also an associative with the names of the index fields as array
-     *                                 indexes. Each entry of this array is set to another type of associative
-     *                                 array that specifies properties of the index that are specific to
-     *                                 each field.
+     * @param string $table      name of the table on which the index is to be created
+     * @param string $name       name of the index to be created
+     * @param array  $definition associative array that defines properties of the index to be created.
+     *                           Currently, only one property named FIELDS is supported. This property
+     *                           is also an associative with the names of the index fields as array
+     *                           indexes. Each entry of this array is set to another type of associative
+     *                           array that specifies properties of the index that are specific to
+     *                           each field.
      *
-     *                                Currently, only the sorting property is supported. It should be used
-     *                                 to define the sorting direction of the index. It may be set to either
-     *                                 ascending or descending.
+     *                           Currently, only the sorting property is supported. It should be used
+     *                           to define the sorting direction of the index. It may be set to either
+     *                           ascending or descending.
      *
-     *                                Not all DBMS support index sorting direction configuration. The DBMS
-     *                                 drivers of those that do not support it ignore this property. Use the
-     *                                 function supports() to determine whether the DBMS driver can manage indexes.
+     *                           Not all DBMS support index sorting direction configuration. The DBMS
+     *                           drivers of those that do not support it ignore this property. Use the
+     *                           function supports() to determine whether the DBMS driver can manage indexes.
      *
-     *                                 Example
-     *                                    array(
-     *                                        'fields' => array(
-     *                                            'user_name' => array(
-     *                                                'sorting' => 'ascending'
-     *                                                'length' => 10
-     *                                            ),
-     *                                            'last_login' => array()
-     *                                        )
+     *                           Example
+     *                               array(
+     *                                   'fields' => array(
+     *                                       'user_name' => array(
+     *                                           'sorting' => 'ascending'
+     *                                           'length' => 10
+     *                                       ),
+     *                                       'last_login' => array()
      *                                    )
+     *                                )
      *
      * @return mixed MDB2_OK on success, a MDB2 error on failure
      * @access public
@@ -913,22 +913,22 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
     /**
      * create a constraint on a table
      *
-     * @param string    $table         name of the table on which the constraint is to be created
+     * @param string    $table        name of the table on which the constraint is to be created
      * @param string    $name         name of the constraint to be created
-     * @param array     $definition        associative array that defines properties of the constraint to be created.
-     *                                 Currently, only one property named FIELDS is supported. This property
-     *                                 is also an associative with the names of the constraint fields as array
-     *                                 constraints. Each entry of this array is set to another type of associative
-     *                                 array that specifies properties of the constraint that are specific to
-     *                                 each field.
+     * @param array     $definition   associative array that defines properties of the constraint to be created.
+     *                                Currently, only one property named FIELDS is supported. This property
+     *                                is also an associative with the names of the constraint fields as array
+     *                                constraints. Each entry of this array is set to another type of associative
+     *                                array that specifies properties of the constraint that are specific to
+     *                                each field.
      *
-     *                                 Example
-     *                                    array(
-     *                                        'fields' => array(
-     *                                            'user_name' => array(),
-     *                                            'last_login' => array()
-     *                                        )
-     *                                    )
+     *                                Example
+     *                                   array(
+     *                                       'fields' => array(
+     *                                           'user_name' => array(),
+     *                                           'last_login' => array()
+     *                                       )
+     *                                   )
      * @return mixed MDB2_OK on success, a MDB2 error on failure
      * @access public
      */
@@ -1012,12 +1012,12 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
         if (PEAR::isError($db)) {
             return $db;
         }
-        
+
         if ($primary || strtolower($name) == 'primary') {
             $query = 'ALTER TABLE '. $db->quoteIdentifier($table, true) .' DROP PRIMARY KEY';
             return $db->exec($query);
         }
-        
+
         //is it a FK constraint? If so, also delete the associated triggers
         $db->loadModule('Reverse', null, true);
         $definition = $db->reverse->getTableConstraintDefinition($table, $name);
@@ -1160,7 +1160,7 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
                 $sql_delete .= ' SET FOREIGN_KEY_CHECKS = 1; END;';
 
                 $db->pushErrorHandling(PEAR_ERROR_RETURN);
-                $db->expectError(MDB2_ERROR_CANNOT_CREATE); 
+                $db->expectError(MDB2_ERROR_CANNOT_CREATE);
                 $result = $db->exec($sql_delete);
                 $expected_errmsg = 'This MySQL version doesn\'t support multiple triggers with the same action time and event for one table';
                 $db->popExpect();
@@ -1272,7 +1272,7 @@ class MDB2_Driver_Manager_mysqli extends MDB2_Driver_Manager_Common
                 }
             }
         }
-
+        
         //list FOREIGN KEY constraints...
         $query = 'SHOW CREATE TABLE '. $db->escape($table);
         $definition = $db->queryOne($query, 'text', 1);

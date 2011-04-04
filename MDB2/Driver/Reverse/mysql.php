@@ -42,75 +42,21 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: mysql.php 295587 2010-02-28 17:16:38Z quipo $
 //
 
 require_once 'MDB2/Driver/Reverse/Common.php';
 
 /**
- * MDB2 MySQLi driver for the schema reverse engineering module
+ * MDB2 MySQL driver for the schema reverse engineering module
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  * @author  Lorenzo Alberton <l.alberton@quipo.it>
  */
-class MDB2_Driver_Reverse_mysqli extends MDB2_Driver_Reverse_Common
+class MDB2_Driver_Reverse_mysql extends MDB2_Driver_Reverse_Common
 {
-    /**
-     * Array for converting MYSQLI_*_FLAG constants to text values
-     * @var    array
-     * @access public
-     */
-    var $flags = array(
-        MYSQLI_NOT_NULL_FLAG        => 'not_null',
-        MYSQLI_PRI_KEY_FLAG         => 'primary_key',
-        MYSQLI_UNIQUE_KEY_FLAG      => 'unique_key',
-        MYSQLI_MULTIPLE_KEY_FLAG    => 'multiple_key',
-        MYSQLI_BLOB_FLAG            => 'blob',
-        MYSQLI_UNSIGNED_FLAG        => 'unsigned',
-        MYSQLI_ZEROFILL_FLAG        => 'zerofill',
-        MYSQLI_AUTO_INCREMENT_FLAG  => 'auto_increment',
-        MYSQLI_TIMESTAMP_FLAG       => 'timestamp',
-        MYSQLI_SET_FLAG             => 'set',
-        // MYSQLI_NUM_FLAG             => 'numeric',  // unnecessary
-        // MYSQLI_PART_KEY_FLAG        => 'multiple_key',  // duplicatvie
-        MYSQLI_GROUP_FLAG           => 'group_by'
-    );
-
-    /**
-     * Array for converting MYSQLI_TYPE_* constants to text values
-     * @var    array
-     * @access public
-     */
-    var $types = array(
-        MYSQLI_TYPE_DECIMAL     => 'decimal',
-        246                     => 'decimal',
-        MYSQLI_TYPE_TINY        => 'tinyint',
-        MYSQLI_TYPE_SHORT       => 'int',
-        MYSQLI_TYPE_LONG        => 'int',
-        MYSQLI_TYPE_FLOAT       => 'float',
-        MYSQLI_TYPE_DOUBLE      => 'double',
-        // MYSQLI_TYPE_NULL        => 'DEFAULT NULL',  // let flags handle it
-        MYSQLI_TYPE_TIMESTAMP   => 'timestamp',
-        MYSQLI_TYPE_LONGLONG    => 'bigint',
-        MYSQLI_TYPE_INT24       => 'mediumint',
-        MYSQLI_TYPE_DATE        => 'date',
-        MYSQLI_TYPE_TIME        => 'time',
-        MYSQLI_TYPE_DATETIME    => 'datetime',
-        MYSQLI_TYPE_YEAR        => 'year',
-        MYSQLI_TYPE_NEWDATE     => 'date',
-        MYSQLI_TYPE_ENUM        => 'enum',
-        MYSQLI_TYPE_SET         => 'set',
-        MYSQLI_TYPE_TINY_BLOB   => 'tinyblob',
-        MYSQLI_TYPE_MEDIUM_BLOB => 'mediumblob',
-        MYSQLI_TYPE_LONG_BLOB   => 'longblob',
-        MYSQLI_TYPE_BLOB        => 'blob',
-        MYSQLI_TYPE_VAR_STRING  => 'varchar',
-        MYSQLI_TYPE_STRING      => 'char',
-        MYSQLI_TYPE_GEOMETRY    => 'geometry',
-    );
-
     // {{{ getTableFieldDefinition()
 
     /**
@@ -401,7 +347,7 @@ class MDB2_Driver_Reverse_mysqli extends MDB2_Driver_Reverse_Common
 
     // }}}
     // {{{ _getTableFKConstraintDefinition()
-
+    
     /**
      * Get the FK definition from the CREATE TABLE statement
      *
@@ -546,7 +492,7 @@ class MDB2_Driver_Reverse_mysqli extends MDB2_Driver_Reverse_Common
         }
 
         $resource = MDB2::isResultCommon($result) ? $result->getResource() : $result;
-        if (!is_object($resource)) {
+        if (!is_resource($resource)) {
             return $db->raiseError(MDB2_ERROR_NEED_MORE_DATA, null, null,
                 'Could not generate result resource', __FUNCTION__);
         }
@@ -561,36 +507,26 @@ class MDB2_Driver_Reverse_mysqli extends MDB2_Driver_Reverse_Common
             $case_func = 'strval';
         }
 
-        $count = @mysqli_num_fields($resource);
-        $res = array();
+        $count = @mysql_num_fields($resource);
+        $res   = array();
         if ($mode) {
             $res['num_fields'] = $count;
         }
 
         $db->loadModule('Datatype', null, true);
         for ($i = 0; $i < $count; $i++) {
-            $tmp = @mysqli_fetch_field($resource);
-
-            $flags = '';
-            foreach ($this->flags as $const => $means) {
-                if ($tmp->flags & $const) {
-                    $flags.= $means . ' ';
-                }
-            }
-            if ($tmp->def) {
-                $flags.= 'default_' . rawurlencode($tmp->def);
-            }
-            $flags = trim($flags);
-
             $res[$i] = array(
-                'table'  => $case_func($tmp->table),
-                'name'   => $case_func($tmp->name),
-                'type'   => isset($this->types[$tmp->type])
-                    ? $this->types[$tmp->type] : 'unknown',
-                // http://bugs.php.net/?id=36579
-                'length' => $tmp->length,
-                'flags'  => $flags,
+                'table'  => $case_func(@mysql_field_table($resource, $i)),
+                'name'   => $case_func(@mysql_field_name($resource, $i)),
+                'type'   => @mysql_field_type($resource, $i),
+                'length' => @mysql_field_len($resource, $i),
+                'flags'  => @mysql_field_flags($resource, $i),
             );
+            if ($res[$i]['type'] == 'string') {
+                $res[$i]['type'] = 'char';
+            } elseif ($res[$i]['type'] == 'unknown') {
+                $res[$i]['type'] = 'decimal';
+            }
             $mdb2type_info = $db->datatype->mapNativeDatatype($res[$i]);
             if (PEAR::isError($mdb2type_info)) {
                return $mdb2type_info;

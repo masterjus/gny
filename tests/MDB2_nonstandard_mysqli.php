@@ -2,8 +2,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2006 Manuel Lemos, Tomas V.V.Cox,                 |
-// | Stig. S. Bakken, Lukas Smith                                         |
+// | Copyright (c) 2006 Lorenzo Alberton                                  |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
 // | MDB2 is a merge of PEAR DB and Metabases that provides a unified DB  |
@@ -39,22 +38,15 @@
 // | WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE          |
 // | POSSIBILITY OF SUCH DAMAGE.                                          |
 // +----------------------------------------------------------------------+
-// | Author: Lukas Smith <smith@pooteeweet.org>                           |
+// | Author: Lorenzo Alberton <l.alberton@quipo.it>                       |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 215004 2006-06-18 21:59:05Z lsmith $
-//
+// $Id: MDB2_nonstandard_mysqli.php 224696 2006-12-09 14:31:54Z quipo $
 
-require_once 'MDB2/Driver/Native/Common.php';
+require_once 'MDB2_nonstandard_mysql.php';
 
-/**
- * MDB2 MySQLi driver for the native module
- *
- * @package MDB2
- * @category Database
- * @author  Lukas Smith <smith@pooteeweet.org>
- */
-class MDB2_Driver_Native_mysqli extends MDB2_Driver_Native_Common
-{
+class MDB2_nonstandard_mysqli extends MDB2_nonstandard_mysql {
+
 }
+
 ?>

@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2007 Manuel Lemos, Tomas V.V.Cox,                 |
+// | Copyright (c) 1998-2008 Manuel Lemos, Tomas V.V.Cox,                 |
 // | Stig. S. Bakken, Lukas Smith                                         |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
@@ -43,19 +43,19 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: mysql.php 295587 2010-02-28 17:16:38Z quipo $
 //
 
 require_once 'MDB2/Driver/Datatype/Common.php';
 
 /**
- * MDB2 MySQLi driver
+ * MDB2 MySQL driver
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Datatype_mysqli extends MDB2_Driver_Datatype_Common
+class MDB2_Driver_Datatype_mysql extends MDB2_Driver_Datatype_Common
 {
     // {{{ _getCharsetFieldDeclaration()
 
@@ -557,43 +557,6 @@ class MDB2_Driver_Datatype_mysqli extends MDB2_Driver_Datatype_Common
     }
 
     // }}}
-    // {{{ mapPrepareDatatype()
-
-    /**
-     * Maps an MDB2 datatype to native prepare type
-     *
-     * @param string $type
-     * @return string
-     * @access public
-     */
-    function mapPrepareDatatype($type)
-    {
-        $db = $this->getDBInstance();
-        if (PEAR::isError($db)) {
-            return $db;
-        }
-
-        if (!empty($db->options['datatype_map'][$type])) {
-            $type = $db->options['datatype_map'][$type];
-            if (!empty($db->options['datatype_map_callback'][$type])) {
-                $parameter = array('type' => $type);
-                return call_user_func_array($db->options['datatype_map_callback'][$type], array(&$db, __FUNCTION__, $parameter));
-            }
-        }
-
-        switch ($type) {
-            case 'integer':
-                return 'i';
-            case 'float':
-                return 'd';
-            case 'blob':
-                return 'b';
-            default:
-                break;
-        }
-        return 's';
-    }
-    
-    // }}}
 }
+
 ?>

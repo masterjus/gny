@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2008 Manuel Lemos, Tomas V.V.Cox,                 |
+// | Copyright (c) 1998-2006 Manuel Lemos, Tomas V.V.Cox,                 |
 // | Stig. S. Bakken, Lukas Smith                                         |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
@@ -42,21 +42,27 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: Common.php 295587 2010-02-28 17:16:38Z quipo $
 //
 
-require_once 'MDB2/Driver/Function/Common.php';
+/**
+ * @package  MDB2
+ * @category Database
+ * @author   Lukas Smith <smith@pooteeweet.org>
+ */
 
 /**
- * MDB2 MySQLi driver for the function modules
+ * Base class for the function modules that is extended by each MDB2 driver
  *
- * @package MDB2
+ * To load this module in the MDB2 object:
+ * $mdb->loadModule('Function');
+ *
+ * @package  MDB2
  * @category Database
- * @author  Lukas Smith <smith@pooteeweet.org>
+ * @author   Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
+class MDB2_Driver_Function_Common extends MDB2_Module_Common
 {
-     // }}}
     // {{{ executeStoredProc()
 
     /**
@@ -68,6 +74,7 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
      *                        the result set
      * @param mixed $result_class string which specifies which result class to use
      * @param mixed $result_wrap_class string which specifies which class to wrap results in
+     *
      * @return mixed a result handle or MDB2_OK on success, a MDB2 error on failure
      * @access public
      */
@@ -78,17 +85,51 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
             return $db;
         }
 
-        $multi_query = $db->getOption('multi_query');
-        if (!$multi_query) {
-            $db->setOption('multi_query', true);
+        $error = $db->raiseError(MDB2_ERROR_UNSUPPORTED, null, null,
+            'method not implemented', __FUNCTION__);
+        return $error;
+    }
+
+    // }}}
+    // {{{ functionTable()
+
+    /**
+     * return string for internal table used when calling only a function
+     *
+     * @return string for internal table used when calling only a function
+     * @access public
+     */
+    function functionTable()
+    {
+        return '';
+    }
+
+    // }}}
+    // {{{ now()
+
+    /**
+     * Return string to call a variable with the current timestamp inside an SQL statement
+     * There are three special variables for current date and time:
+     * - CURRENT_TIMESTAMP (date and time, TIMESTAMP type)
+     * - CURRENT_DATE (date, DATE type)
+     * - CURRENT_TIME (time, TIME type)
+     *
+     * @param string $type 'timestamp' | 'time' | 'date'
+     *
+     * @return string to call a variable with the current timestamp
+     * @access public
+     */
+    function now($type = 'timestamp')
+    {
+        switch ($type) {
+        case 'time':
+            return 'CURRENT_TIME';
+        case 'date':
+            return 'CURRENT_DATE';
+        case 'timestamp':
+        default:
+            return 'CURRENT_TIMESTAMP';
         }
-        $query = 'CALL '.$name;
-        $query .= $params ? '('.implode(', ', $params).')' : '()';
-        $result = $db->query($query, $types, $result_class, $result_wrap_class);
-        if (!$multi_query) {
-            $db->setOption('multi_query', false);
-        }
-        return $result;
     }
 
     // }}}
@@ -104,7 +145,45 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
      */
     function unixtimestamp($expression)
     {
-        return 'UNIX_TIMESTAMP('. $expression.')';
+        $db = $this->getDBInstance();
+        if (PEAR::isError($db)) {
+            return $db;
+        }
+
+        $error = $db->raiseError(MDB2_ERROR_UNSUPPORTED, null, null,
+            'method not implemented', __FUNCTION__);
+        return $error;
+    }
+
+    // }}}
+    // {{{ substring()
+
+    /**
+     * return string to call a function to get a substring inside an SQL statement
+     *
+     * @return string to call a function to get a substring
+     * @access public
+     */
+    function substring($value, $position = 1, $length = null)
+    {
+        if (null !== $length) {
+            return "SUBSTRING($value FROM $position FOR $length)";
+        }
+        return "SUBSTRING($value FROM $position)";
+    }
+
+    // }}}
+    // {{{ replace()
+
+    /**
+     * return string to call a function to get replace inside an SQL statement.
+     *
+     * @return string to call a function to get a replace
+     * @access public
+     */
+    function replace($str, $from_str, $to_str)
+    {
+        return "REPLACE($str, $from_str , $to_str)";
     }
 
     // }}}
@@ -116,13 +195,76 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
      * @param string $value1
      * @param string $value2
      * @param string $values...
+     *
      * @return string to concatenate two strings
      * @access public
-     **/
+     */
     function concat($value1, $value2)
     {
         $args = func_get_args();
-        return "CONCAT(".implode(', ', $args).")";
+        return "(".implode(' || ', $args).")";
+    }
+
+    // }}}
+    // {{{ random()
+
+    /**
+     * return string to call a function to get random value inside an SQL statement
+     *
+     * @return return string to generate float between 0 and 1
+     * @access public
+     */
+    function random()
+    {
+        return 'RAND()';
+    }
+
+    // }}}
+    // {{{ lower()
+
+    /**
+     * return string to call a function to lower the case of an expression
+     *
+     * @param string $expression
+     *
+     * @return return string to lower case of an expression
+     * @access public
+     */
+    function lower($expression)
+    {
+        return "LOWER($expression)";
+    }
+
+    // }}}
+    // {{{ upper()
+
+    /**
+     * return string to call a function to upper the case of an expression
+     *
+     * @param string $expression
+     *
+     * @return return string to upper case of an expression
+     * @access public
+     */
+    function upper($expression)
+    {
+        return "UPPER($expression)";
+    }
+
+    // }}}
+    // {{{ length()
+
+    /**
+     * return string to call a function to get the length of a string expression
+     *
+     * @param string $expression
+     *
+     * @return return string to get the string expression length
+     * @access public
+     */
+    function length($expression)
+    {
+        return "LENGTH($expression)";
     }
 
     // }}}
@@ -136,7 +278,14 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
      */
     function guid()
     {
-        return 'UUID()';
+        $db = $this->getDBInstance();
+        if (PEAR::isError($db)) {
+            return $db;
+        }
+
+        $error = $db->raiseError(MDB2_ERROR_UNSUPPORTED, null, null,
+            'method not implemented', __FUNCTION__);
+        return $error;
     }
 
     // }}}

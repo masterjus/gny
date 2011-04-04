@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2008 Manuel Lemos, Tomas V.V.Cox,                 |
+// | Copyright (c) 1998-2006 Manuel Lemos, Tomas V.V.Cox,                 |
 // | Stig. S. Bakken, Lukas Smith                                         |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
@@ -42,103 +42,20 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: Common.php 242348 2007-09-09 13:47:36Z quipo $
 //
 
-require_once 'MDB2/Driver/Function/Common.php';
-
 /**
- * MDB2 MySQLi driver for the function modules
+ * Base class for the natuve modules that is extended by each MDB2 driver
+ *
+ * To load this module in the MDB2 object:
+ * $mdb->loadModule('Native');
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
+class MDB2_Driver_Native_Common extends MDB2_Module_Common
 {
-     // }}}
-    // {{{ executeStoredProc()
-
-    /**
-     * Execute a stored procedure and return any results
-     *
-     * @param string $name string that identifies the function to execute
-     * @param mixed  $params  array that contains the paramaters to pass the stored proc
-     * @param mixed   $types  array that contains the types of the columns in
-     *                        the result set
-     * @param mixed $result_class string which specifies which result class to use
-     * @param mixed $result_wrap_class string which specifies which class to wrap results in
-     * @return mixed a result handle or MDB2_OK on success, a MDB2 error on failure
-     * @access public
-     */
-    function executeStoredProc($name, $params = null, $types = null, $result_class = true, $result_wrap_class = false)
-    {
-        $db = $this->getDBInstance();
-        if (PEAR::isError($db)) {
-            return $db;
-        }
-
-        $multi_query = $db->getOption('multi_query');
-        if (!$multi_query) {
-            $db->setOption('multi_query', true);
-        }
-        $query = 'CALL '.$name;
-        $query .= $params ? '('.implode(', ', $params).')' : '()';
-        $result = $db->query($query, $types, $result_class, $result_wrap_class);
-        if (!$multi_query) {
-            $db->setOption('multi_query', false);
-        }
-        return $result;
-    }
-
-    // }}}
-    // {{{ unixtimestamp()
-
-    /**
-     * return string to call a function to get the unix timestamp from a iso timestamp
-     *
-     * @param string $expression
-     *
-     * @return string to call a variable with the timestamp
-     * @access public
-     */
-    function unixtimestamp($expression)
-    {
-        return 'UNIX_TIMESTAMP('. $expression.')';
-    }
-
-    // }}}
-    // {{{ concat()
-
-    /**
-     * Returns string to concatenate two or more string parameters
-     *
-     * @param string $value1
-     * @param string $value2
-     * @param string $values...
-     * @return string to concatenate two strings
-     * @access public
-     **/
-    function concat($value1, $value2)
-    {
-        $args = func_get_args();
-        return "CONCAT(".implode(', ', $args).")";
-    }
-
-    // }}}
-    // {{{ guid()
-
-    /**
-     * Returns global unique identifier
-     *
-     * @return string to get global unique identifier
-     * @access public
-     */
-    function guid()
-    {
-        return 'UUID()';
-    }
-
-    // }}}
 }
 ?>

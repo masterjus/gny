@@ -42,19 +42,19 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: mysql.php 295587 2010-02-28 17:16:38Z quipo $
 //
 
 require_once 'MDB2/Driver/Function/Common.php';
 
 /**
- * MDB2 MySQLi driver for the function modules
+ * MDB2 MySQL driver for the function modules
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
+class MDB2_Driver_Function_mysql extends MDB2_Driver_Function_Common
 {
      // }}}
     // {{{ executeStoredProc()
@@ -78,17 +78,9 @@ class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
             return $db;
         }
 
-        $multi_query = $db->getOption('multi_query');
-        if (!$multi_query) {
-            $db->setOption('multi_query', true);
-        }
         $query = 'CALL '.$name;
         $query .= $params ? '('.implode(', ', $params).')' : '()';
-        $result = $db->query($query, $types, $result_class, $result_wrap_class);
-        if (!$multi_query) {
-            $db->setOption('multi_query', false);
-        }
-        return $result;
+        return $db->query($query, $types, $result_class, $result_wrap_class);
     }
 
     // }}}

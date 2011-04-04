@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------+
 // | PHP versions 4 and 5                                                 |
 // +----------------------------------------------------------------------+
-// | Copyright (c) 1998-2008 Manuel Lemos, Tomas V.V.Cox,                 |
+// | Copyright (c) 1998-2006 Manuel Lemos, Tomas V.V.Cox,                 |
 // | Stig. S. Bakken, Lukas Smith                                         |
 // | All rights reserved.                                                 |
 // +----------------------------------------------------------------------+
@@ -42,103 +42,142 @@
 // | Author: Lukas Smith <smith@pooteeweet.org>                           |
 // +----------------------------------------------------------------------+
 //
-// $Id: mysqli.php 295587 2010-02-28 17:16:38Z quipo $
+// $Id: Date.php 208329 2006-03-01 12:15:38Z lsmith $
 //
 
-require_once 'MDB2/Driver/Function/Common.php';
+/**
+ * @package  MDB2
+ * @category Database
+ * @author   Lukas Smith <smith@pooteeweet.org>
+ */
 
 /**
- * MDB2 MySQLi driver for the function modules
+ * Several methods to convert the MDB2 native timestamp format (ISO based)
+ * to and from data structures that are convenient to worth with in side of php.
+ * For more complex date arithmetic please take a look at the Date package in PEAR
  *
  * @package MDB2
  * @category Database
  * @author  Lukas Smith <smith@pooteeweet.org>
  */
-class MDB2_Driver_Function_mysqli extends MDB2_Driver_Function_Common
+class MDB2_Date
 {
-     // }}}
-    // {{{ executeStoredProc()
+    // {{{ mdbNow()
 
     /**
-     * Execute a stored procedure and return any results
+     * return the current datetime
      *
-     * @param string $name string that identifies the function to execute
-     * @param mixed  $params  array that contains the paramaters to pass the stored proc
-     * @param mixed   $types  array that contains the types of the columns in
-     *                        the result set
-     * @param mixed $result_class string which specifies which result class to use
-     * @param mixed $result_wrap_class string which specifies which class to wrap results in
-     * @return mixed a result handle or MDB2_OK on success, a MDB2 error on failure
+     * @return string current datetime in the MDB2 format
      * @access public
      */
-    function executeStoredProc($name, $params = null, $types = null, $result_class = true, $result_wrap_class = false)
+    function mdbNow()
     {
-        $db = $this->getDBInstance();
-        if (PEAR::isError($db)) {
-            return $db;
-        }
-
-        $multi_query = $db->getOption('multi_query');
-        if (!$multi_query) {
-            $db->setOption('multi_query', true);
-        }
-        $query = 'CALL '.$name;
-        $query .= $params ? '('.implode(', ', $params).')' : '()';
-        $result = $db->query($query, $types, $result_class, $result_wrap_class);
-        if (!$multi_query) {
-            $db->setOption('multi_query', false);
-        }
-        return $result;
+        return date('Y-m-d H:i:s');
     }
-
     // }}}
-    // {{{ unixtimestamp()
+
+    // {{{ mdbToday()
 
     /**
-     * return string to call a function to get the unix timestamp from a iso timestamp
+     * return the current date
      *
-     * @param string $expression
-     *
-     * @return string to call a variable with the timestamp
+     * @return string current date in the MDB2 format
      * @access public
      */
-    function unixtimestamp($expression)
+    function mdbToday()
     {
-        return 'UNIX_TIMESTAMP('. $expression.')';
+        return date('Y-m-d');
     }
-
     // }}}
-    // {{{ concat()
+
+    // {{{ mdbTime()
 
     /**
-     * Returns string to concatenate two or more string parameters
+     * return the current time
      *
-     * @param string $value1
-     * @param string $value2
-     * @param string $values...
-     * @return string to concatenate two strings
-     * @access public
-     **/
-    function concat($value1, $value2)
-    {
-        $args = func_get_args();
-        return "CONCAT(".implode(', ', $args).")";
-    }
-
-    // }}}
-    // {{{ guid()
-
-    /**
-     * Returns global unique identifier
-     *
-     * @return string to get global unique identifier
+     * @return string current time in the MDB2 format
      * @access public
      */
-    function guid()
+    function mdbTime()
     {
-        return 'UUID()';
+        return date('H:i:s');
     }
+    // }}}
 
+    // {{{ date2Mdbstamp()
+
+    /**
+     * convert a date into a MDB2 timestamp
+     *
+     * @param int hour of the date
+     * @param int minute of the date
+     * @param int second of the date
+     * @param int month of the date
+     * @param int day of the date
+     * @param int year of the date
+     *
+     * @return string a valid MDB2 timestamp
+     * @access public
+     */
+    function date2Mdbstamp($hour = null, $minute = null, $second = null,
+        $month = null, $day = null, $year = null)
+    {
+        return MDB2_Date::unix2Mdbstamp(mktime($hour, $minute, $second, $month, $day, $year, -1));
+    }
+    // }}}
+
+    // {{{ unix2Mdbstamp()
+
+    /**
+     * convert a unix timestamp into a MDB2 timestamp
+     *
+     * @param int a valid unix timestamp
+     *
+     * @return string a valid MDB2 timestamp
+     * @access public
+     */
+    function unix2Mdbstamp($unix_timestamp)
+    {
+        return date('Y-m-d H:i:s', $unix_timestamp);
+    }
+    // }}}
+
+    // {{{ mdbstamp2Unix()
+
+    /**
+     * convert a MDB2 timestamp into a unix timestamp
+     *
+     * @param int a valid MDB2 timestamp
+     * @return string unix timestamp with the time stored in the MDB2 format
+     *
+     * @access public
+     */
+    function mdbstamp2Unix($mdb_timestamp)
+    {
+        $arr = MDB2_Date::mdbstamp2Date($mdb_timestamp);
+
+        return mktime($arr['hour'], $arr['minute'], $arr['second'], $arr['month'], $arr['day'], $arr['year'], -1);
+    }
+    // }}}
+
+    // {{{ mdbstamp2Date()
+
+    /**
+     * convert a MDB2 timestamp into an array containing all
+     * values necessary to pass to php's date() function
+     *
+     * @param int a valid MDB2 timestamp
+     *
+     * @return array with the time split
+     * @access public
+     */
+    function mdbstamp2Date($mdb_timestamp)
+    {
+        list($arr['year'], $arr['month'], $arr['day'], $arr['hour'], $arr['minute'], $arr['second']) =
+            sscanf($mdb_timestamp, "%04u-%02u-%02u %02u:%02u:%02u");
+        return $arr;
+    }
     // }}}
 }
+
 ?>

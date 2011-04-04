@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS `chat_room` (
 --
 
 CREATE TABLE IF NOT EXISTS `maps` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO INCREMENT,
   `name` varchar(250) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `maps` (
 --
 
 CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO INCREMENT,
   `name` varchar(250) NOT NULL,
   `rating` int(11) NOT NULL,
   `registration_date` datetime NOT NULL,
