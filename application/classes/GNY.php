@@ -65,7 +65,10 @@ final class GNY extends GNY_Abstract
     
   }
   
-  
+  public function load()
+  {
+      return $this;
+  }
   
   private function _validateKey()
   {

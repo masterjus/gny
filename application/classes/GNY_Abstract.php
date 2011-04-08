@@ -15,15 +15,29 @@ abstract class GNY_Abstract
   public function __construct()
   {
     $this->_db =& MDB2::singleton();
+    $this->_db->options['debug'] = 0;
+    $this->_db->options['debug_handler'] = 'vd';
   }
   
   public function loadByPk($value=null)
   {
-    if (null != $value) {
+    if (null !== $value) {
       $sSql = "SELECT * FROM `%s` WHERE `%s`='%s'";
       $sSql = sprintf($sSql, $this->_table, $this->_pk, $value);
-      return $result = $this->_db->queryRow($sSql);
+      
+      /* @var $result MDB2_Result_mysql */
+      $result = $this->_db->query($sSql);
+        
+      $columns = $result->getColumnNames();
+
+      $row = $result->fetchRow(MDB2_FETCHMODE_ASSOC);
+      foreach ($row as $name => $value) {
+          $this->$name = $value;
+      }
+      $result->free();
     }
+    return $this;
   }
   
+  public abstract function load();
 }

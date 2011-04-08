@@ -27,3 +27,7 @@ require_once 'classes/GNY.php';
 $gny = new GNY();
 $gny->debug = true;
 
+function vd($mixed)
+{
+    var_dump($mixed);
+}

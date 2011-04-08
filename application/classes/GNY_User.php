@@ -16,9 +16,31 @@ class GNY_User extends GNY_Abstract
     }
   }
   
-  public function authenticate()
+  public function load($id = null)
   {
-    
+     if (null !== $id )
+         $this->id = $id;
+         
+     $this->loadByPk($this->id); 
+  }
+  
+  public function authenticate( $data = array() )
+  {
+      if ( !empty($data) ) {
+          $sSql = 'SELECT * FROM `users` WHERE `name` = %s AND `password` = %s';
+          $sSql = sprintf($sSql, $this->_db->quote($data['name']),$this->_db->quote(md5($data['password'])));
+          $result =  $this->_db->queryRow($sSql, null, MDB2_FETCHMODE_ASSOC);
+          
+          if ( empty($result) ) {
+              GNY_Error::addError('Authentication query error');
+              return false;
+          }  else {
+              foreach ($result as $attrib => $value) 
+                  $this->$attrib = $value;
+              
+          }
+      }
+      return $this;
   }
   
   /*
@@ -28,8 +50,8 @@ class GNY_User extends GNY_Abstract
    */
   public function register()
   {
-    $sSql = 'INSERT INTO `users` (`name`, `registration_date`) VALUES (%s, NOW())';
-    $sSql = sprintf($sSql, $this->_db->quote($this->name,'text'));
+    $sSql = 'INSERT INTO `users` (`name`, `password`, `registration_date`) VALUES (%s, %s, NOW())';
+    $sSql = sprintf($sSql, $this->_db->quote($this->name,'text'), $this->_db->quote(md5($this->password),'text'));
     $res =& $this->_db->exec($sSql);
     
     // Always check that result is not an error
@@ -39,7 +61,9 @@ class GNY_User extends GNY_Abstract
           
     $this->id = $this->_db->lastInsertID('users'); 
     if (!$this->startUserSession()) {
-        return false;
+        GNY_Error::addError('Registration failure.');
+    } else {
+        $this->load();
     }
     return $this;
   }
@@ -53,10 +77,13 @@ class GNY_User extends GNY_Abstract
       $params = array(session_id(), $this->id, $this->_generateKey());
       $res =& $pSql->execute($params);
         // Always check that result is not an error
-        
+      
       if (PEAR::isError($res)) {
           die($res->getMessage());
-      }
+      } else {
+          $pSql->free();
+          return true;
+      } 
     }
     return false;
   }

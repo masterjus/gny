@@ -9,9 +9,13 @@ require_once 'application/classes/GNY_User.php';
 /**
  * GNY_User test case.
  */
+/**
+ * @param object $GNY_User GNY_User 
+ * @author master
+ */
 class Auth extends PHPUnit_Framework_TestCase {
   
-  /**
+  /*
    * @var GNY_User
    */
   private $GNY_User;
@@ -31,7 +35,7 @@ class Auth extends PHPUnit_Framework_TestCase {
   
   public function testUserObj()
   {
-  	return null != $this->GNY_User;
+  	return is_a($this->GNY_User, 'GNY_User');
   }
   
   public function testDbConnection()
@@ -41,7 +45,7 @@ class Auth extends PHPUnit_Framework_TestCase {
   	return null == $connection;
   }
   public function testDbLoadModule()
-  {
+  { 
   	$db =& MDB2::singleton();
   	$type = $db->loadModule('Datatype', null, true);
   	return null !== $type;
@@ -64,23 +68,38 @@ class Auth extends PHPUnit_Framework_TestCase {
       return null !== session_id();
   }
   
-  public function testGenerateKey()
-  {
-      
-  } 
-  
-  public function testRegister()
+  public function testRegister()    
   {
   	/* @var $userObj GNY_User */ 
   	$this->GNY_User->name = 'test'.time();
+  	$this->GNY_User->password = 'qwe123qwe';
     $userObj = $this->GNY_User->register();
     if ($userObj) {
-        print $userObj->id;
+        print 'Registered';
+        return $userObj;
     } else {
-        return PEAR::raiseError();
+        $this->fail(GNY_Error::getErrors());
     }
   }
-  
+
+  /**
+   * @depends testRegister
+   * @dataProvider testRegister
+   */
+  public function testAuth(GNY_User $userObj)
+  {
+      $data = array('name' => $userObj->name, 'password' => 'qwe123qwe' );
+      unset($this->GNY_User);
+      $this->GNY_User = new GNY_User();
+      $this->GNY_User->authenticate($data);
+
+      if ( $this->GNY_User->isAuthenticated()) {
+          print 'Authenticated';
+      } else {
+          foreach (GNY_Error::getErrors() as $error )
+              $this->fail("auth: ". $error);
+      }
+  }
   /**
    * Constructs the test case.
    */
