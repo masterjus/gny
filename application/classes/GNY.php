@@ -1,5 +1,7 @@
 <?php
+error_reporting('E_ALL');
 require_once 'GNY_Abstract.php';
+require_once 'GNY_User.php';
 
 final class GNY extends GNY_Abstract
 {
@@ -14,6 +16,7 @@ final class GNY extends GNY_Abstract
   {
     parent::__construct();
     $this->_json = new Services_JSON();
+    
   }
   
   public function process(array $post)
@@ -21,23 +24,46 @@ final class GNY extends GNY_Abstract
     parent::__construct();
     $this->_request = $post;
     $this->_parseRequest();
+    
+    $userId = isset($this->_request['uid']) ? $this->_request['uid'] : null;
+    $this->_user = new GNY_User($userId);
+    
+    $this->_response = null;
+    switch ($this->_action) {
+      case 'reg':
+          if ( $this->_user->register($this->_request) ) {
+              $this->_response['status'] = 'OK';
+          }
+        break;
+      case 'auth':
+          if ( $this->_user->authenticate($this->_request) ) {
+              $this->_response['status'] = 'OK';
+              $this->_response['uid'] = $this->_user->id;
+          }
+        break;
+      default:
+        if ( $this->_validateKey() ) {  
+            $this->_user->startUserSession();
+        } 
+
+      }
+    
   }
   
-  public function response()
+  public function getResponse()
   {
-    
-    
-    
-    
-    
+        
+    if (GNY_Error::hasErrors()) {
+      $this->_response = array('status' => 'error', 'message' => GNY_Error::getErrors());
+    }
     if (empty($this->_response)) {
       GNY_Error::addError('Empty response');
+      $this->_response = array('status' => 'error', 'message' => GNY_Error::getErrors());
     }
-    
-    if (GNY_Error::hasErrors()) {
-      $this->_response = $this->_makeJson('error',null,GNY_Error::getErrors());
+    if ($this->_user->isAuthenticated()) {
+        $this->_response['key'] = $this->_user->key;
     }
-    return $this->_response;
+    return $this->_makeJson($this->_action, $this->_user->id, $this->_response );
   }
   
   private function _makeJson($action, $userId, $message) {
@@ -45,7 +71,7 @@ final class GNY extends GNY_Abstract
     $response = array(
       'action' => $action,
       'userId' => $userId,
-      'message' => $message,
+      'result' => $message,
     );
     
     if ($this->debug)
@@ -61,8 +87,12 @@ final class GNY extends GNY_Abstract
       return;
     }
     $this->_action = $this->_request['action'];
-    $this->_user = new GNY_User($this->_request['userId']);
-    
+
+  }
+  
+  private function _do()
+  {
+
   }
   
   public function load()
@@ -72,7 +102,22 @@ final class GNY extends GNY_Abstract
   
   private function _validateKey()
   {
-    
+    if ($this->_user->isAuthenticated() && !empty($this->_request['key']) ) {
+      $sSql = "SELECT COUNT(*) FROM `users_online` WHERE `session_id` = %s AND `user_id` = %d AND `key` = %s";
+      $sSql = sprintf($sSql, $this->_db->quote(session_id()),
+                      $this->_user->id,
+                      $this->_db->quote($this->_request['key'], 'text'));
+      $result = $this->_db->queryOne($sSql, 'integer');
+       // Always check that result is not an error
+      
+      if (PEAR::isError($result)) {
+          GNY_Error::addError( $result->getMessage());
+      } else {
+          return $result > 0;
+      }
+    } else {
+        return false;
+    }
   }
 }
 

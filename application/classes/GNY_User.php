@@ -6,16 +6,21 @@ class GNY_User extends GNY_Abstract
   public $name;
   public $key;
   
-  public function __construct( $userId = null) {
+  public function __construct( $userId = null) 
+  {
     parent::__construct();
     $this->_table = 'users';
     $this->_pk = 'id';
     
     if ( null !== $userId ) {
-      $this->loadByPk($userId);
+      $this->load($userId);
     }
   }
   
+  /**
+   * @TODO Добавить передачу ключа и смену PK
+   * @see GNY_Abstract::load()
+   */
   public function load($id = null)
   {
      if (null !== $id )
@@ -26,7 +31,7 @@ class GNY_User extends GNY_Abstract
   
   public function authenticate( $data = array() )
   {
-      if ( !empty($data) ) {
+      if ( !$this->isAuthenticated() && !empty($data) ) {
           $sSql = 'SELECT * FROM `users` WHERE `name` = %s AND `password` = %s';
           $sSql = sprintf($sSql, $this->_db->quote($data['name']),$this->_db->quote(md5($data['password'])));
           $result =  $this->_db->queryRow($sSql, null, MDB2_FETCHMODE_ASSOC);
@@ -37,7 +42,7 @@ class GNY_User extends GNY_Abstract
           }  else {
               foreach ($result as $attrib => $value) 
                   $this->$attrib = $value;
-              
+              $this->startUserSession();
           }
       }
       return $this;
@@ -48,42 +53,48 @@ class GNY_User extends GNY_Abstract
    * 
    * @return object GNY_User
    */
-  public function register()
+  public function register( $data = array() )
   {
-    $sSql = 'INSERT INTO `users` (`name`, `password`, `registration_date`) VALUES (%s, %s, NOW())';
-    $sSql = sprintf($sSql, $this->_db->quote($this->name,'text'), $this->_db->quote(md5($this->password),'text'));
-    $res =& $this->_db->exec($sSql);
-    
-    // Always check that result is not an error
-    if (PEAR::isError($res)) {
-        die($res->getMessage());
-    }
-          
-    $this->id = $this->_db->lastInsertID('users'); 
-    if (!$this->startUserSession()) {
-        GNY_Error::addError('Registration failure.');
-    } else {
-        $this->load();
-    }
+      if ( !empty($data) ) {
+        $sSql = 'INSERT INTO `users` (`name`, `password`, `registration_date`) VALUES (%s, %s, NOW())';
+        $sSql = sprintf($sSql, $this->_db->quote($data['name'],'text'), $this->_db->quote(md5($data['password']),'text'));
+        $res =& $this->_db->exec($sSql);
+        
+        // Always check that result is not an error
+        if (PEAR::isError($res)) {
+          GNY_Error::addError( $res->getMessage());
+        } 
+              
+        $this->id = $this->_db->lastInsertID('users'); 
+        if (!$this->startUserSession()) {
+            GNY_Error::addError('Registration failure.');
+        } else {
+            $this->load();
+        }
+      }
     return $this;
   }
   
-  protected function startUserSession()
+  public function startUserSession()
   {
-    if ( $this->isAuthenticated()) {
+    if ( $this->isAuthenticated() ) {
       $this->key = $this->_generateKey();
-      $pSql = $this->_db->prepare("INSERT INTO `users_online` (`session_id`, `user_id`, `key`,`date_time`)
-      		VALUES (?,?,?,NOW())");
-      $params = array(session_id(), $this->id, $this->_generateKey());
-      $res =& $pSql->execute($params);
+      $this->_db->loadModule('Function');
+      $params = array('session_id' => array('value' => session_id(),
+                                            'key' => true,
+                                            'type' => 'text' ), 
+                      'user_id' => array('value' => $this->id, 'key' => true), 
+                      'key' => array('value' => $this->key, 'type' => 'text'),
+                      'date_time' => array('value' => 'NOW()', 'type' => 'timestamp'));
+     
+      $res = $this->_db->replace( 'users_online', $params );
         // Always check that result is not an error
       
       if (PEAR::isError($res)) {
-          die($res->getMessage());
+          GNY_Error::addError( $res->getMessage());
       } else {
-          $pSql->free();
           return true;
-      } 
+      }
     }
     return false;
   }
