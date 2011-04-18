@@ -1,6 +1,6 @@
 <?php
 require_once 'JSON.php';
-require_once 'GNY_Memcache.php';
+//require_once 'GNY_Memcache.php';
 
 abstract class GNY_Abstract
 {

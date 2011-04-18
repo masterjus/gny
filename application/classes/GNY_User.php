@@ -1,4 +1,5 @@
 <?php
+require_once 'classes/GNY_Abstract.php';
 
 class GNY_User extends GNY_Abstract
 {
@@ -37,7 +38,7 @@ class GNY_User extends GNY_Abstract
           $result =  $this->_db->queryRow($sSql, null, MDB2_FETCHMODE_ASSOC);
           
           if ( empty($result) ) {
-              GNY_Error::addError('Authentication query error');
+              GNY_Error::addError('Authentication query error. Query: '.$sSql);
               return false;
           }  else {
               foreach ($result as $attrib => $value) 
@@ -79,19 +80,18 @@ class GNY_User extends GNY_Abstract
   {
     if ( $this->isAuthenticated() ) {
       $this->key = $this->_generateKey();
-      $this->_db->loadModule('Function');
-      $params = array('session_id' => array('value' => session_id(),
-                                            'key' => true,
-                                            'type' => 'text' ), 
-                      'user_id' => array('value' => $this->id, 'key' => true), 
-                      'key' => array('value' => $this->key, 'type' => 'text'),
-                      'date_time' => array('value' => 'NOW()', 'type' => 'timestamp'));
-     
-      $res = $this->_db->replace( 'users_online', $params );
-        // Always check that result is not an error
+      // Always check that result is not an error
+      $sSql = 'REPLACE INTO `users_online` SET
+      			`session_id`= %s, 
+      			`user_id` = %d,
+      			`key` = %s,
+      			`date_time` = NOW()';
+      $sSql = sprintf($sSql, $this->_db->quote(session_id(), 'text'),
+                       $this->id, $this->_db->quote($this->key,'text'));
       
+      $res = $this->_db->query( $sSql);
       if (PEAR::isError($res)) {
-          GNY_Error::addError( $res->getMessage());
+          GNY_Error::addError( $res->getMessage(). ' Query: '. $sSql);
       } else {
           return true;
       }
@@ -99,6 +99,17 @@ class GNY_User extends GNY_Abstract
     return false;
   }
   
+  public function getOnlineUsersList()
+  {
+      $sSql = "SELECT `id`,`name` FROM `users_online` uo, `users` u 
+      		   WHERE `date_time` >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+      		   		 AND u.id = uo.user_id";
+      $aResult = $this->_db->queryAll($sSql, array(), MDB2_FETCHMODE_ASSOC);
+      return $aResult;
+  }
+  /**
+   * Возвращает true, если пользователь залогинен  
+   */
   public function isAuthenticated()
   {
     return null !== $this->id;
@@ -109,7 +120,7 @@ class GNY_User extends GNY_Abstract
    * 
    */
   private function _generateKey()
-  {
+  {//return 'a5f8248d97245a71977079cbbc5f0619';
     global $config;
     $keyLine = $config['secret']['key']. time();
     if (null !== $this->id){

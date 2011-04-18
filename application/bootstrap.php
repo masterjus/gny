@@ -22,8 +22,9 @@ $options = array(
     'result_buffering' => false,
 );
 $db =& MDB2::connect($connectionStr,$options);
+ini_set('error_reporting', 'E_ALL');
+require_once APP_PATH.'/classes/GNY.php';
 
-require_once 'classes/GNY.php';
 $gny = new GNY();
 $gny->debug = true;
 

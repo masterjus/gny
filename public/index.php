@@ -3,11 +3,11 @@ session_start();
 error_reporting('E_ALL');
 require_once '../application/bootstrap.php';
 
-$_POST['action'] = 'auth';
-//$_POST['uid'] = '110';
+$_POST['action'] = 'online_list';
+$_POST['uid'] = '110';
 $_POST['name'] = 'jus';
 $_POST['password'] = 'qwe123qwe';
-//$_POST['key'] = '2ff36911b9954d614b8c5e48990fea5b';
+$_POST['key'] = 'a5f8248d97245a71977079cbbc5f0619';
  
 
 if (isset($_POST)){

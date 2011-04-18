@@ -71,9 +71,9 @@ class Auth extends PHPUnit_Framework_TestCase {
   public function testRegister()    
   {
   	/* @var $userObj GNY_User */ 
-  	$this->GNY_User->name = 'test'.time();
-  	$this->GNY_User->password = 'qwe123qwe';
-    $userObj = $this->GNY_User->register();
+  	$data['name'] = 'test'.time();
+  	$data['password'] = 'qwe123qwe';
+    $userObj = $this->GNY_User->register($data);
     if ($userObj) {
         print 'Registered';
         return $userObj;

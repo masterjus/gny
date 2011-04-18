@@ -1,7 +1,7 @@
 <?php
 error_reporting('E_ALL');
-require_once 'GNY_Abstract.php';
-require_once 'GNY_User.php';
+require_once 'classes/GNY_Abstract.php';
+require_once 'classes/GNY_User.php';
 
 final class GNY extends GNY_Abstract
 {
@@ -29,6 +29,7 @@ final class GNY extends GNY_Abstract
     $this->_user = new GNY_User($userId);
     
     $this->_response = null;
+
     switch ($this->_action) {
       case 'reg':
           if ( $this->_user->register($this->_request) ) {
@@ -39,13 +40,22 @@ final class GNY extends GNY_Abstract
           if ( $this->_user->authenticate($this->_request) ) {
               $this->_response['status'] = 'OK';
               $this->_response['uid'] = $this->_user->id;
+              $this->_user->startUserSession();
           }
         break;
       default:
         if ( $this->_validateKey() ) {  
             $this->_user->startUserSession();
-        } 
-
+            $this->_response['uid'] = $this->_user->id;
+            switch ($this->_action) {
+                case 'online_list':
+                 $this->_response['list'] = $this->_user->getOnlineUsersList();;
+                break;
+            }
+        } else {
+            GNY_Error::addError("The key isn't valid!");
+        }
+        break;
       }
     
   }
